@@ -48,6 +48,8 @@ MySQL.ready(function()
             end
 
             print("^4[INFO] " .. countCode .. " creator code(s) found")
+        else
+            print("^4[INFO] No creator code found")
         end
 	end)
 
@@ -360,7 +362,9 @@ ESX.RegisterServerCallback('mgd_shop:getCreatorcode', function(source, cb)
         ['@shopID'] = ID
 	}, function(result)
         if result[1] then
-		    cb(result)
+		cb(result)
+	else
+            cb({})
         end
 	end)
 end)
