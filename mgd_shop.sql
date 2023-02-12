@@ -14,3 +14,5 @@ CREATE TABLE `mgdshop_creatorcode` (
 
 ALTER TABLE `mgdshop_creatorcode`
   ADD PRIMARY KEY (`code`);
+
+ALTER TABLE `mgdshop_history` CHANGE `identifier` `identifier` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `time` `time` VARCHAR(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `categ` `categ` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `data` `data` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;

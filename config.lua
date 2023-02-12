@@ -44,6 +44,8 @@ Config = {
         commandName = "boutique",
         --→ Default opening menu key
         openingKey = "F9",
+        --→ Using ESX Legacy
+        esxLegacy = false,
 }
 
 Config.HistoryCategories = {

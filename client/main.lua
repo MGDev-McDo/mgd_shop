@@ -1,15 +1,19 @@
 ESX = nil
+if Config.esxLegacy then ESX = exports["es_extended"]:getSharedObject() end
 menuOpen = false
 PlayerDead = false
 Citizen.CreateThread(function()
-    TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-
-	while ESX == nil do
+	if Config.esxLegacy then
+		ESX.PlayerData = ESX.GetPlayerData()
+	else
 		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-		Citizen.Wait(0)
-	end
 
-	ESX.PlayerData = ESX.GetPlayerData()
+		while ESX == nil do
+			TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+			Citizen.Wait(0)
+		end
+		ESX.PlayerData = ESX.GetPlayerData()
+	end
 end)
 
 function _(str, ...)

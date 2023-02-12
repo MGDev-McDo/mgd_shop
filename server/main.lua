@@ -1,5 +1,5 @@
 ESX = nil
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+if Config.esxLegacy then ESX = exports["es_extended"]:getSharedObject() else TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end) end
 
 ServerItemsInfos = {}
 ServerItemsInfos.Ranks = {}
