@@ -45,7 +45,7 @@ Config = {
         --→ Default opening menu key
         openingKey = "F9",
         --→ Using ESX Legacy
-        esxLegacy = false,
+        esxLegacy = true,
 }
 
 Config.HistoryCategories = {
