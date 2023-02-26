@@ -8,6 +8,8 @@ window.onload = function(e) {
 
       if (data.display === true) {
         $('#version').text("v"+ CONFIG.version)
+        document.getElementById("navbarAdmin").innerHTML = '<span class="navbar-item" id="adminNav_creatorsCodes">CODES CREATEURS</span><span class="navbar-item" id="adminNav_logsItems">LOGS ACHATS</span><span class="navbar-item" id="adminNav_logsTransactions">LOGS TRANSACTIONS</span>'
+        document.getElementById("homeArea").innerHTML = '<div class="homeContainer"><div class="homeInfo"><i class="fa-solid fa-user-tag"></i>Identifiant Boutique<i class="fa-solid fa-arrow-right arrowIcon"></i><span id="homeLogin">MGD-0000</span></div><div class="homeInfo"><i class="fa-solid fa-user"></i>ID Serveur<i class="fa-solid fa-arrow-right arrowIcon"></i><span id="homeID">0</span></div><div class="homeInfo"><i class="fa-solid fa-ranking-star"></i>Rang<i class="fa-solid fa-arrow-right arrowIcon"></i><span id="homeRank">Joueur</span></div></div><div class="homeButton" id="sendCoins"><span><i class="fa-solid fa-share"></i>Envoyer des coins</span></div><div class="homeButton" id="playerHistory"><span><i class="fa-solid fa-bookmark"></i>Historique</span></div><div class="homeButton" id="adminMenu"><span><i class="fa-solid fa-toolbox"></i>Administration</span></div>'
         updateHour();
         setInterval(updateHour, 5000);
         insertData(userShopData);
