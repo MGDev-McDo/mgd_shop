@@ -1,18 +1,13 @@
-ALTER TABLE `users` ADD `shopID` VARCHAR(50) NOT NULL DEFAULT 'MGD', ADD `shopTokens` INT NOT NULL DEFAULT '0' AFTER `shopID`, ADD `shopRank` VARCHAR(50) NOT NULL DEFAULT 'Joueur' AFTER `shopTokens`;
+ALTER TABLE `users` ADD `shopID` VARCHAR(50) NOT NULL DEFAULT 'MGD', ADD `shopTokens` INT NOT NULL DEFAULT '0' AFTER `shopID`, ADD `shopRank` VARCHAR(50) NOT NULL DEFAULT 'user' AFTER `shopTokens`;
 
-CREATE TABLE `mgdshop_history` (
-  `identifier` varchar(50) NOT NULL,
-  `time` varchar(24) NOT NULL,
-  `categ` varchar(50) NOT NULL,
-  `data` longtext NOT NULL
-);
-
-CREATE TABLE `mgdshop_creatorcode` (
-  `identifier` varchar(50) NOT NULL,
-  `code` varchar(50) NOT NULL
-);
+CREATE TABLE `mgdshop_creatorcode` (`identifier` varchar(50) NOT NULL, `code` varchar(50) NOT NULL);
 
 ALTER TABLE `mgdshop_creatorcode`
   ADD PRIMARY KEY (`code`);
+  
+CREATE TABLE `mgdshop_history_items` (`pIdentifier` VARCHAR(100) NOT NULL , `pShopID` VARCHAR(10) NOT NULL , `hDate` VARCHAR(10) NOT NULL , `hHour` VARCHAR(8) NOT NULL , `hCreatorCodeUsed` VARCHAR(50) NOT NULL , `hCategorie` VARCHAR(15) NOT NULL , `hItem` VARCHAR(100) NOT NULL , `hPrice` INT NOT NULL , `hReward` LONGTEXT NOT NULL DEFAULT "" );
+ALTER TABLE `mgdshop_history_items` ADD `id` INT NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
+ALTER TABLE `mgdshop_history_items` ADD UNIQUE `noDuplicata` (`pIdentifier`, `pShopID`, `hDate`, `hHour`);
 
-ALTER TABLE `mgdshop_history` CHANGE `identifier` `identifier` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `time` `time` VARCHAR(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `categ` `categ` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, CHANGE `data` `data` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
+CREATE TABLE `mgdshop_history_transactions` (`sIdentifier` VARCHAR(100) NOT NULL , `sShopID` VARCHAR(10) NOT NULL , `rIdentifier` VARCHAR(100) NOT NULL , `rShopID` VARCHAR(10) NOT NULL , `hDate` VARCHAR(10) NOT NULL , `hHour` VARCHAR(8) NOT NULL , `tAmount` INT NOT NULL );
+ALTER TABLE `mgdshop_history_transactions` ADD `id` INT NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);

@@ -1,62 +1,75 @@
-ESX = nil
-if Config.esxLegacy then ESX = exports["es_extended"]:getSharedObject() else TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end) end
+ESX = exports["es_extended"]:getSharedObject()
 
 ServerItemsInfos = {}
-ServerItemsInfos.Ranks = {}
-ServerItemsInfos.Vehicles = {}
-ServerItemsInfos.Weapons = {}
-ServerItemsInfos.Money = {}
-ServerItemsInfos.Lootboxs = {}
-
 CreatorCodes = {}
 
-MySQL.ready(function()
-    local count = 0
-    local countCode = 0
-    for k,v in pairs(Config.Ranks) do
-        ServerItemsInfos.Ranks[v.label] = v.price
-        count = count + 1
-    end
+AddEventHandler('onResourceStart', function(resourceName)
+	if resourceName == GetCurrentResourceName() then
+        local configFile = LoadResourceFile(GetCurrentResourceName(), "./client/ui/config.json")
+        configFile = json.decode(configFile)
 
-    for k,v in pairs(Config.Vehicles) do
-        ServerItemsInfos.Vehicles[v.model] = v.price
-        count = count + 1
-    end
-
-    for k,v in pairs(Config.Weapons) do
-        ServerItemsInfos.Weapons[v.name] = v.price
-        count = count + 1
-    end
-
-    for k,v in pairs(Config.Money) do
-        ServerItemsInfos.Money[v.name] = {price = v.price, amount = v.amount}
-        count = count + 1
-    end
-
-    for k,v in pairs(Config.Lootboxs) do
-        ServerItemsInfos.Lootboxs[v.name] = {price = v.price, loots = v.loots}
-        count = count + 1
-    end
-
-    MySQL.Async.fetchAll('SELECT * FROM `mgdshop_creatorcode`', {
-        ['@shopID'] = ID
-	}, function(result)
-        if result[1] then
-		    for i = 1, #result, 1 do
-                CreatorCodes[result[i].code] = result[i].identifier
-                countCode = countCode + 1
+        local count = 0
+        local countCode = 0
+        for k,v in pairs(configFile['shopItems']) do
+            ServerItemsInfos[k] = {}
+            for k2,v2 in pairs(configFile['shopItems'][k]) do
+                ServerItemsInfos[k][k2] = v2
+                count = count + 1
             end
-
-            print("^4[INFO] " .. countCode .. " creator code(s) found")
-        else
-            print("^4[INFO] No creator code found")
         end
-	end)
 
-    print("^4[INFO] " .. count .. " shop item(s) found")
+        MySQL.query('SELECT * FROM `mgdshop_creatorcode`', {
+        }, function(result)
+            if result[1] then
+                for i = 1, #result, 1 do
+                    CreatorCodes[result[i].code] = result[i].identifier
+                    countCode = countCode + 1
+                end
 
-    SetTimeout(Config.promotTime, PromoteMessage)
+                print("^4[INFO] " .. countCode .. " creator code(s) found^7")
+            else
+                print("^4[INFO] No creator code found^7")
+            end
+        end)
+
+        print("^4[INFO] " .. count .. " shop item(s) found^7")
+
+        SetTimeout(Config.promotTime, PromoteMessage)
+    end
 end)
+
+function InsertItemsLog(playerIdentifier, playerShopID, creatorCode, categorie, item, price, reward)
+    MySQL.insert('INSERT INTO `mgdshop_history_items` (pIdentifier, pShopID, hDate, hHour, hCreatorCodeUsed, hCategorie, hItem, hPrice, hReward) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', {
+        playerIdentifier,
+        playerShopID,
+        os.date('%d', os.time()) .. "/" .. os.date('%m', os.time()) .. "/" .. os.date('%Y', os.time()),
+        os.date('%H', os.time()) .. "h" .. os.date('%M', os.time()) .. ":" .. os.date('%S', os.time()),
+        creatorCode,
+        categorie,
+        item,
+        price,
+        json.encode(reward)
+    })
+end
+
+function InsertTransactionsLog(senderIdentifier, senderShopID, receiverIdentifier, receiverShopID, amount)
+    if receiverShopID == "nc" then
+        local result = MySQL.query.await('SELECT shopID FROM `users` WHERE identifier = ?', {receiverIdentifier})
+        if result then
+            receiverShopID = result[1].shopID
+        end
+    end
+
+    MySQL.insert('INSERT INTO `mgdshop_history_transactions` (sIdentifier, sShopID, rIdentifier, rShopID, hDate, hHour, tAmount) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        senderIdentifier,
+        senderShopID,
+        receiverIdentifier,
+        receiverShopID,
+        os.date('%d', os.time()) .. "/" .. os.date('%m', os.time()) .. "/" .. os.date('%Y', os.time()),
+        os.date('%H', os.time()) .. "h" .. os.date('%M', os.time()) .. ":" .. os.date('%S', os.time()),
+        amount
+    })
+end
 
 function PromoteMessage()
     TriggerClientEvent('mgd_shop:shopNotification', -1, "~c~/" .. Config.commandName .. " (" .. Config.openingKey .. ")", Config.promotMessage)
@@ -68,374 +81,402 @@ AddEventHandler('mgd_shop:forcePromoteMessage', function()
 	PromoteMessage()
 end)
 
-function _(str, ...)
-	if Messages[_Lang] ~= nil then
-		if Messages[_Lang][str] ~= nil then
-			return string.format(Messages[_Lang][str], ...)
-		else
-			return str .. " doesn't have translation"
-		end
-	end
-end
-
-function GetRankPower(rank)
-    if rank == Config.defaultRank then
-		return 0
-	end
-
-	for k,v in pairs(Config.Ranks) do
-		if v.label == rank then
-			return k
-		end
-	end
-end
-
-function HistoryAdd(identifier, purchaseData)
-    MySQL.Async.execute('INSERT INTO `mgdshop_history` SET `identifier` = @identifier, `time` = @time, `categ` = @categ, `data` = @data', {
-        ['@identifier'] = identifier,
-        ['@time'] = os.date('%d', os.time()) .. "/" .. os.date('%m', os.time()) .. "/" .. os.date('%Y', os.time()) .. " - " .. os.date('%H', os.time()) .. "h" .. os.date('%M', os.time()) .. ":" .. os.date('%S', os.time()),
-        ['@categ'] = purchaseData.type,
-        ['@data'] = json.encode(purchaseData)
-    }, function(rowsChange)
-        if not rowsChange then     
-            print("^1[ERROR] No INSERT " .. identifier .. " → " .. json.encode(purchaseData))       
-        end
-    end)
-end
-
 function CreatorCodeUse(code, creditUsed)
-    local xPlayer = ESX.GetPlayerFromIdentifier(CreatorCodes[code])
-    local reward = creditUsed * (Config.codeReward / 100)
+    if CreatorCodes[code] ~= nil then
+        local xPlayer = ESX.GetPlayerFromIdentifier(CreatorCodes[code])
+        local reward = creditUsed * (Config.codeReward / 100)
 
-    MySQL.Async.fetchAll('SELECT `shopTokens` FROM `users` WHERE `identifier` = @identifier', {
-        ['@identifier'] = CreatorCodes[code]
-	}, function(result)
-        if result[1] then
-		    MySQL.Async.execute('UPDATE `users` SET `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                ['@identifier'] = CreatorCodes[code],
-                ['@shopTokens'] = result[1].shopTokens + reward
-            }, function(rowsChange)
-                if rowsChange then
-                    if xPlayer and Config.codeNotification then
-                        TriggerClientEvent("mgd_shop:shopNotification", xPlayer.source, _('creatorCode_title'), _('creatorCode_used', ESX.Math.Round(reward), Config.creditName .. "(s)"))
-                    end
-                else
-                    print("^1[ERROR] Can't add codeReward for " .. xPlayer.identifier .. " | Reward : " .. reward)
-                end
-            end)
-        else
-            print("^1[ERROR] Can't found info for creator " .. xPlayer.identifier)
-        end
-	end)
-end
-
-function ManageReward(xPlayer, reward)
-    if reward.type == "rank" then
-        MySQL.Async.fetchAll('SELECT `shopRank` FROM `users` WHERE identifier = @identifier', {
-            ['@identifier'] = xPlayer.identifier
+        MySQL.query('SELECT `shopTokens` FROM `users` WHERE `identifier` = ?', {
+            CreatorCodes[code]
         }, function(result)
             if result[1] then
-                local rewardPower = GetRankPower(reward.label)
-                local actualPower = GetRankPower(result[1].shopRank)
-
-                if rewardPower > actualPower then
-                    MySQL.Async.execute('UPDATE `users` SET `shopRank` = @shopRank WHERE `identifier` = @identifier', {
-                        ['@identifier'] = xPlayer.identifier,
-                        ['@shopRank'] = reward.label
-                    }, function(rowsChange)
-                        if not rowsChange then
-                            print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated shopRank when reward " .. reward.label)
+                MySQL.update('UPDATE `users` SET `shopTokens` = ? WHERE `identifier` = ?', {
+                    result[1].shopTokens + reward,
+                    CreatorCodes[code]
+                }, function(rowsChange)
+                    if rowsChange then
+                        if xPlayer and Config.codeNotification then
+                            TriggerClientEvent("mgd_shop:shopNotification", xPlayer.source, _('mgd_shop_creator_title'), _('mgd_shop_creator_used', ESX.Math.Round(reward)))
                         end
-                    end)
-                else
-                    MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` + @shopTokens WHERE `identifier` = @identifier', {
-                        ['@identifier'] = xPlayer.identifier,
-                        ['@shopTokens'] = ServerItemsInfos.Ranks[reward.label]
-                    }, function(rowsChange)
-                        if rowsChange then
-                            TriggerClientEvent('mgd_shop:shopNotification', xPlayer.source, _('mgd_infos'), _('mgd_reward_alreadyRank', ServerItemsInfos.Ranks[reward.label]))
-                        else
-                            print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated shopRank when reward " .. reward.label)
-                        end
-                    end)
-                end
+                    else
+                        print("^1[ERROR] Can't add codeReward for " .. xPlayer.identifier .. " | Reward : " .. reward)
+                    end
+                end)
             else
-                print("^1[ERROR] No result in reward rank for " .. xPlayer.identifier)
+                print("^1[ERROR] Can't found info for creator " .. xPlayer.identifier)
             end
         end)
-    end
-
-    if reward.type == "vehicle" then
-        TriggerClientEvent('mgd_shop:giveVehicle', xPlayer.source, reward.model)
-    end
-
-    if reward.type == "weapon" then
-        xPlayer.addWeapon(reward.name, Config.ammoWeapon)
-    end
-
-    if reward.type == "money" then
-        xPlayer.addAccountMoney('bank', reward.amount)
-        TriggerClientEvent('esx:showAdvancedNotification', xPlayer.source, _('bank_title'), _('bank_subtitle'), _('bank_content', ESX.Math.GroupDigits(reward.amount)), "CHAR_BANK_MAZE", 9)
-    end
-
-    if reward.type == "credit" then
-        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` + @shopTokens WHERE `identifier` = @identifier', {
-            ['@identifier'] = xPlayer.identifier,
-            ['@shopTokens'] = reward.amount
-        }, function(rowsChange)
-            if not rowsChange then
-                print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated shopTokens when reward " .. reward.amount)
-            end
-        end)
+    else
+        print("^1[ERROR] Can't found info for code " .. code)
     end
 end
 
-ESX.RegisterServerCallback('mgd_shop:removeCredits', function(source, cb, target, quantity)
-    if tonumber(target) ~= nil then
-        if GetPlayerName(tonumber(target)) then
-            target = ESX.GetPlayerFromId(tonumber(target))
-            MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` - @shopTokens WHERE `identifier` = @identifier', {
-                ['@identifier'] = target.identifier,
-                ['@shopTokens'] = quantity
-            }, function(rowsChange)
-                if rowsChange then
-                    TriggerClientEvent('mgd_shop:shopNotification', target.source, _('mgd_infos'), _('mgd_admin_receiveRemoveCredits', quantity))
-                    cb(true, "S")
-                else
-                    print("^1[ERROR] Can't update removeCredits for " .. target.identifier)
-                    cb(false, _('mgd_error_playerProcess')) 
-                end
-            end)
-        else
-            cb(false, _('mgd_error_playerIdnotonline'))
-        end
-    else
-        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` - @shopTokens WHERE `shopID` = @shopID', {
-            ['@shopID'] = target,
-            ['@shopTokens'] = quantity
+RegisterServerEvent('mgd_shop:adminCoins')
+AddEventHandler('mgd_shop:adminCoins', function(sender, target, action, amount)
+    if action == "give" then
+        MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` + ? WHERE `identifier` = ?', {
+            amount,
+            target.identifier
         }, function(rowsChange)
             if rowsChange then
-                MySQL.Async.fetchAll('SELECT `identifier` FROM `users` WHERE `shopID` = @shopID', {
-                    ['@shopID'] = target
-                }, function(result)
-                    if result[1] then
-                        local xPlayer = ESX.GetPlayerFromIdentifier(result[1].identifier)
-                        if xPlayer then
-                            TriggerClientEvent('mgd_shop:shopNotification', xPlayer.source, _('mgd_infos'), _('mgd_admin_receiveRemoveCredits', quantity))
-                        end
-                    else
-                        print("^1[ERROR] Can't found info for " .. target)
-                    end
-                end)
-
-                cb(true, "S")
+                sender.showNotification(_('mgd_command_success'))
+                TriggerClientEvent("mgd_shop:shopNotification", target.source, _('mgd_shop_admin'), _('mgd_shop_admin_coins_give', ESX.Math.Round(amount)))       
             else
-                print("^1[ERROR] Can't update removeCredits for " .. target)
-                cb(false, _('mgd_error_playerProcess')) 
+                sender.showNotification(_('mgd_command_error_processing'))
+            end
+        end)
+    end
+    if action == "remove" then
+        MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` - ? WHERE `identifier` = ?', {
+            amount,
+            target.identifier
+        }, function(rowsChange)
+            if rowsChange then
+                sender.showNotification(_('mgd_command_success'))
+                TriggerClientEvent("mgd_shop:shopNotification", target.source, _('mgd_shop_admin'), _('mgd_shop_admin_coins_remove', ESX.Math.Round(amount)))       
+            else
+                sender.showNotification(_('mgd_command_error_processing'))
+            end
+        end)
+    end
+    if action == "set" then
+        MySQL.update('UPDATE `users` SET `shopTokens` = ? WHERE `identifier` = ?', {
+            amount,
+            target.identifier
+        }, function(rowsChange)
+            if rowsChange then
+                sender.showNotification(_('mgd_command_success'))
+                TriggerClientEvent("mgd_shop:shopNotification", target.source, _('mgd_shop_admin'), _('mgd_shop_admin_coins_set', ESX.Math.Round(amount)))       
+            else
+                sender.showNotification(_('mgd_command_error_processing'))
             end
         end)
     end
 end)
 
-ESX.RegisterServerCallback('mgd_shop:addCredits', function(source, cb, target, quantity)
-    if tonumber(target) ~= nil then
-        if GetPlayerName(tonumber(target)) then
-            target = ESX.GetPlayerFromId(tonumber(target))
-            MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` + @shopTokens WHERE `identifier` = @identifier', {
-                ['@identifier'] = target.identifier,
-                ['@shopTokens'] = quantity
-            }, function(rowsChange)
-                if rowsChange then
-                    TriggerClientEvent('mgd_shop:shopNotification', target.source, _('mgd_infos'), _('mgd_admin_receiveAddCredits', quantity))
-                    cb(true, "S")
-                else
-                    print("^1[ERROR] Can't update addCredits for " .. target.identifier)
-                    cb(false, _('mgd_error_playerProcess')) 
-                end
-            end)
-        else
-            cb(false, _('mgd_error_playerIdnotonline'))
-        end
-    else
-        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` + @shopTokens WHERE `shopID` = @shopID', {
-            ['@shopID'] = target,
-            ['@shopTokens'] = quantity
+RegisterServerEvent('mgd_shop:adminSetRank')
+AddEventHandler('mgd_shop:adminSetRank', function(sender, target, rank)
+    local rankData = ServerItemsInfos["rangs"][rank]
+
+    if rank == "user" then
+        rankData = {}
+        rankData.label = "Joueur"
+    end
+
+    if rankData ~= nil then
+        MySQL.update('UPDATE `users` SET `shopRank` = ? WHERE `identifier` = ?', {
+            rank,
+            target.identifier
         }, function(rowsChange)
             if rowsChange then
-                MySQL.Async.fetchAll('SELECT `identifier` FROM `users` WHERE `shopID` = @shopID', {
-                    ['@shopID'] = target
-                }, function(result)
-                    if result[1] then
-                        local xPlayer = ESX.GetPlayerFromIdentifier(result[1].identifier)
-                        if xPlayer then
-                            TriggerClientEvent('mgd_shop:shopNotification', xPlayer.source, _('mgd_infos'), _('mgd_admin_receiveAddCredits', quantity))
-                        end
-                    else
-                        print("^1[ERROR] Can't found info for " .. target)
-                    end
-                end)
-
-                cb(true, "S")
+                sender.showNotification(_('mgd_command_success'))
+                TriggerClientEvent("mgd_shop:shopNotification", target.source, _('mgd_shop_admin'), _('mgd_shop_admin_rank', rankData.label))       
             else
-                print("^1[ERROR] Can't update addCredits for " .. target)
-                cb(false, _('mgd_error_playerProcess')) 
+                sender.showNotification(_('mgd_command_error_processing'))
+            end
+        end)
+    else
+        sender.showNotification(_('mgd_command_error_rank'))
+    end
+end)
+
+RegisterServerEvent('mgd_shop:adminSetShopID')
+AddEventHandler('mgd_shop:adminSetShopID', function(sender, target, newShopID)
+    MySQL.query('SELECT `shopID` FROM `users` WHERE `shopID` = ?', {
+        "MGD-" .. newShopID
+	}, function(result)
+        if result[1] then
+		    sender.showNotification(_('mgd_command_error_newShopID'))
+        else
+            MySQL.update('UPDATE `users` SET `shopID` = ? WHERE `identifier` = ?', {
+                "MGD-" ..newShopID,
+                target.identifier
+            }, function(rowsChange)
+                if rowsChange then
+                    sender.showNotification(_('mgd_command_success'))
+                    TriggerClientEvent("mgd_shop:shopNotification", target.source, _('mgd_shop_admin'), _('mgd_shop_admin_newShopID', newShopID))       
+                else
+                    sender.showNotification(_('mgd_command_error_processing'))
+                end
+            end)
+        end
+	end)
+end)
+
+ESX.RegisterServerCallback('mgd_shop:creatorCodeUpdate', function(source, cb, updateType, oldValue, newValue, refCode)
+    if updateType == "code" then
+        MySQL.update('UPDATE `mgdshop_creatorcode` SET `code` = ? WHERE `code` = ?', {
+            newValue,
+            oldValue
+        }, function(rowsChange)
+            if rowsChange then
+                CreatorCodes[newValue] = CreatorCodes[oldValue]
+                CreatorCodes[oldValue] = nil
+                cb(true)
+            else
+                cb(false)
+            end
+        end)
+    end
+
+    if updateType == "identifier" then
+        MySQL.update('UPDATE `mgdshop_creatorcode` SET `identifier` = ? WHERE `code` = ?', {
+            newValue,
+            refCode
+        }, function(rowsChange)
+            if rowsChange then
+                CreatorCodes[refCode] = newValue
+                cb(true)
+            else
+                cb(false)
             end
         end)
     end
 end)
 
-ESX.RegisterServerCallback('mgd_shop:getHistory', function(source, cb)
-    MySQL.Async.fetchAll('SELECT `mgdshop_history`.`identifier`, `time`, `categ`, `data`, `shopID`  FROM `mgdshop_history` LEFT JOIN `users` ON `mgdshop_history`.`identifier` = `users`.`identifier` ORDER BY `time` DESC', {
-	}, function(result)
-        if result[1] then
-		    cb(result)
+ESX.RegisterServerCallback('mgd_shop:creatorCodeDelete', function(source, cb, refCode)
+    MySQL.update('DELETE FROM `mgdshop_creatorcode` WHERE `code` = ?', {
+        refCode
+    }, function(rowsChange)
+        if rowsChange then
+            CreatorCodes[refCode] = nil
+            cb(true)
         else
-            cb(nil)
+            cb(false)
         end
+    end)
+end)
+
+ESX.RegisterServerCallback('mgd_shop:creatorCodeMoney', function(source, cb, refCode)
+    MySQL.query('SELECT `hPrice` FROM `mgdshop_history_items` WHERE `hCreatorCodeUsed` = ?', {
+        refCode
+	}, function(result)
+        local money = 0
+        if result[1] then
+		    for i=1, #result, 1 do
+                money = money + result[i].hPrice
+            end
+        end
+        money = money * (Config.codeReward / 100)
+        cb(money)
 	end)
 end)
 
-ESX.RegisterServerCallback('mgd_shop:editCreatorcode_identifier', function(source, cb, creatorCode, identifier, editIdentifier)
-    MySQL.Async.execute('UPDATE `mgdshop_creatorcode` SET `identifier` = @newIdentifier WHERE `identifier` = @identifier', {
-        ['@identifier'] = identifier,
-        ['@newIdentifier'] = editIdentifier
-    }, function(rowsChange)
+ESX.RegisterServerCallback('mgd_shop:creatorCodeCreate', function(source, cb, code, identifier)
+    MySQL.insert('INSERT INTO `mgdshop_creatorcode`(identifier, code) VALUES (?, ?)', {
+        identifier,
+        code
+	}, function(rowsChange)
         if rowsChange then
-            CreatorCodes[creatorCode] = editIdentifier
+            CreatorCodes[code] = identifier
             cb(true)
-        else
-            print("^1[ERROR] Can't update creatorCode for " .. identifier)
-            cb(false) 
-        end
-    end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:editCreatorcode_code', function(source, cb, identifier, creatorCode, editCreatorCode)
-    MySQL.Async.execute('UPDATE `mgdshop_creatorcode` SET `code` = @newCode WHERE `code` = @code', {
-        ['@code'] = creatorCode,
-        ['@newCode'] = editCreatorCode
-    }, function(rowsChange)
-        if rowsChange then
-            CreatorCodes[creatorCode] = nil
-            CreatorCodes[editCreatorCode] = identifier
-            TriggerClientEvent('mgd_shop:creatorCodeEdit', -1, creatorCode, editCreatorCode)
-            cb(true)
-        else
-            print("^1[ERROR] Can't update creatorCode for " .. creatorCode)
-            cb(false) 
-        end
-    end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:deleteCreatorcode', function(source, cb, creatorCode)
-    MySQL.Async.execute('DELETE FROM `mgdshop_creatorcode` WHERE `code` = @code', {
-        ['@code'] = creatorCode
-    }, function(rowsChange)
-        if rowsChange then
-            CreatorCodes[creatorCode] = nil
-            TriggerClientEvent('mgd_shop:creatorCodeDelete', -1, creatorCode)
-            cb(true)
-        else
-            print("^1[ERROR] Can't delete creatorCode for " .. creatorCode)
-            cb(false) 
-        end
-    end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:createCreatorcode', function(source, cb, creatorCode, identifier)
-    MySQL.Async.execute('INSERT INTO `mgdshop_creatorcode`(`identifier`, `code`) VALUES (@identifier, @code)', {
-        ['@identifier'] = identifier,
-        ['@code'] = creatorCode
-    }, function(rowsChange)
-        if rowsChange then
-            CreatorCodes[creatorCode] = identifier
-            cb(true)
-        else
-            print("^1[ERROR] Can't create creatorCode for " .. identifier .. " | Code : " .. creatorCode)
-            cb(false)  
-        end
-    end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:getCreatorcode', function(source, cb)
-    MySQL.Async.fetchAll('SELECT * FROM `mgdshop_creatorcode`', {
-        ['@shopID'] = ID
-	}, function(result)
-        if result[1] then
-		cb(result)
-	else
-            cb({})
-        end
-	end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:sendCredits', function(source, cb, senderShopID, shopID, quantity)
-    local _src = source
-    local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `identifier`, `shopID` FROM `users` WHERE `shopID` = @shopID', {
-        ['@shopID'] = shopID
-	}, function(result)
-        if result[1] then
-            local xPlayerTarget = ESX.GetPlayerFromIdentifier(result[1].identifier)
-            MySQL.Async.fetchAll('SELECT `shopTokens` FROM `users` WHERE `identifier` = @identifier', {
-                ['@identifier'] = xPlayer.identifier
-            }, function(result2)
-                if result2[1] then
-                    if result2[1].shopTokens > quantity then
-                        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` - @shopTokens WHERE `identifier` = @identifier', {
-                            ['@shopTokens'] = quantity,
-                            ['@identifier'] = xPlayer.identifier
-                        }, function(rowsChange)
-                            if rowsChange then
-                                MySQL.Async.execute('UPDATE `users` SET `shopTokens` = `shopTokens` + @shopTokens WHERE `shopID` = @shopID', {
-                                    ['@shopTokens'] = quantity,
-                                    ['@shopID'] = shopID
-                                }, function(rowsChange2)
-                                    if rowsChange2 then
-                                        if xPlayerTarget then
-                                            TriggerClientEvent("mgd_shop:shopNotification", xPlayerTarget.source, _('sendCredits_title'), _('sendCredits_content', ESX.Math.Round(quantity), senderShopID))
-                                        end
-                                        HistoryAdd(xPlayer.identifier, {masterType = "send", type = "send", amount = "~r~-~s~" .. quantity, toFrom = shopID})
-                                        HistoryAdd(xPlayerTarget.identifier, {masterType = "send", type = "receive", amount = "~g~+~s~" .. quantity, toFrom = senderShopID})
-                                        cb(true, "S")
-                                    else
-                                        print("^1[ERROR] Can't update shopTokens for " .. shopID .. " in sendCredits")
-                                        cb(false, _('mgd_sendCredits_error_processing'))  
-                                    end
-                                end)
-                            else
-                                print("^1[ERROR] Can't update shopTokens for " .. xPlayer.identifier .. " in sendCredits")
-                                cb(false, _('mgd_sendCredits_error_processing'))
-                            end
-                        end)
-                    else
-                        cb(false, _('mgd_sendMenu_notEnoughQuantity'))
-                    end
-                else
-                    cb(false, _('mgd_sendCredits_error_noData'))
-                end
-            end)
-		else
-            cb(false, _('mgd_sendCredits_error_unknowShopID'))
-        end
-	end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:isIDTaken', function(source, cb, ID)
-    MySQL.Async.fetchAll('SELECT `shopID` FROM `users` WHERE `shopID` = @shopID', {
-        ['@shopID'] = ID
-	}, function(result)
-        if result[1] then
-		    cb(true)
         else
             cb(false)
         end
 	end)
 end)
 
-ESX.RegisterServerCallback('mgd_shop:creatorCodeValid', function(source, cb, creatorCode)
-    MySQL.Async.fetchAll('SELECT `code` FROM `mgdshop_creatorcode` WHERE `code` = @creatorCode', {
-        ['@creatorCode'] = creatorCode
+ESX.RegisterServerCallback('mgd_shop:getAdminLogsItems', function(source, cb, filter)
+    MySQL.query('SELECT * FROM `mgdshop_history_items` '.. filter ..' ORDER BY `hDate` DESC, `hHour` DESC', {
+    }, function(result)
+        if result[1] then
+            cb(result)
+        else
+            cb({})
+        end
+	end)
+end)
+
+ESX.RegisterServerCallback('mgd_shop:getAdminLogsTransactions', function(source, cb, filter)
+    MySQL.query('SELECT * FROM `mgdshop_history_transactions` '.. filter ..' ORDER BY `hDate` DESC, `hHour` DESC', {
+    }, function(result)
+        if result[1] then
+            cb(result)
+        else
+            cb({})
+        end
+	end)
+end)
+
+ESX.RegisterServerCallback('mgd_shop:lootboxReward', function(source, cb, rewardData)
+    local _src = source
+    local xPlayer = ESX.GetPlayerFromId(_src)
+	if rewardData.type == "rank" then
+        MySQL.query('SELECT `shopRank` FROM `users` WHERE identifier = ?', {
+            xPlayer.identifier
+        }, function(result)
+            if result[1] then
+                local actualPower = ServerItemsInfos["rangs"][result[1].shopRank].power
+                local rewardPower = ServerItemsInfos["rangs"][rewardData.reward].power
+
+                if rewardPower > actualPower then
+                    MySQL.update('UPDATE `users` SET `shopRank` = ? WHERE `identifier` = ?', {
+                        rewardData.reward,
+                        xPlayer.identifier
+                    }, function(rowsChange)
+                        if rowsChange then
+                            cb(true)
+                        else
+                            cb(false, "Error : LR#2.1-".. rewardData.type)
+                            print("^1[ERROR] MySQL failed to UPDATE " .. xPlayer.identifier .. " shopRank reward " .. rewardData.reward)
+                        end
+                    end)
+                else
+                    MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` + ? WHERE `identifier` = ?', {
+                        ServerItemsInfos["rangs"][rewardData.reward].price,
+                        xPlayer.identifier
+                    }, function(rowsChange)
+                        if rowsChange then
+                            cb(true)
+                        else
+                            cb(false, "Error : LR#2.2-".. rewardData.type)
+                            print("^1[ERROR] MySQL failed to UPDATE " .. xPlayer.identifier .. " shopRank price reward " .. rewardData.reward)
+                        end
+                    end)
+                end
+            else
+                cb(false, "Error : LR#1-".. rewardData.type)
+                print("^1[ERROR] No result in reward rank for " .. xPlayer.identifier)
+            end
+        end)
+    end
+
+    if rewardData.type == "vehicle" then
+        TriggerClientEvent('mgd_shop:giveVehicle', xPlayer.source, rewardData.reward)
+        cb(true)
+    end
+
+    if rewardData.type == "weapon" then
+        xPlayer.addWeapon(rewardData.reward, 50)
+        cb(true)
+    end
+
+    if rewardData.type == "money" then
+        xPlayer.addAccountMoney('bank', tonumber(rewardData.reward))
+        TriggerClientEvent("esx:showAdvancedNotification", xPlayer.source, _('mgd_bank_title'), _('mgd_bank_object'), _('mgd_bank_content', rewardData.reward), "CHAR_BANK_MAZE", 9)
+        cb(true)
+    end
+
+    if rewardData.type == "coins" then
+        MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` + ? WHERE `identifier` = ?', {
+            rewardData.reward,
+            xPlayer.identifier
+        }, function(rowsChange)
+            if rowsChange then
+                cb(true)
+            else
+                cb(false, "Error : LR-".. rewardData.type)
+                print("^1[ERROR] MySQL failed to UPDATE " .. xPlayer.identifier .. " shopTokens reward " .. rewardData.reward)
+            end
+        end)
+    end
+end)
+
+ESX.RegisterServerCallback('mgd_shop:getCreatorcode', function(source, cb)
+    cb(CreatorCodes)
+end)
+
+ESX.RegisterServerCallback('mgd_shop:sendCredits', function(source, cb, sendType, senderShopID, receiver, quantity)
+    local _src = source
+    local xPlayer = ESX.GetPlayerFromId(_src)
+    
+    if sendType == 'serverID' then
+        local xPlayerTarget = ESX.GetPlayerFromId(receiver)
+
+        if xPlayerTarget ~= nil then
+            MySQL.query('SELECT `shopTokens` FROM `users` WHERE `identifier` = ?', {
+                xPlayer.identifier
+            }, function(senderTokens)
+                if senderTokens[1] then
+                    if senderTokens[1].shopTokens >= quantity then
+                        MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` - ? WHERE `identifier` = ?', {
+                            quantity,
+                            xPlayer.identifier
+                        }, function(rowsChange)
+                            if rowsChange then
+                                MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` + ? WHERE `identifier` = ?', {
+                                    quantity,
+                                    xPlayerTarget.identifier
+                                }, function(rowsChange2)
+                                    if rowsChange2 then
+                                        InsertTransactionsLog(xPlayer.identifier, senderShopID, xPlayerTarget.identifier, "nc", quantity)
+                                        TriggerClientEvent("mgd_shop:shopNotification", xPlayerTarget.source, _('mgd_shop_credits_title'), _('mgd_shop_credits_content', ESX.Math.Round(quantity), senderShopID))       
+                                        cb(true, "")
+                                    else
+                                        print("^1[ERROR] Can't update shopTokens for " .. xPlayerTarget.identifier .. " in sendCredits")
+                                        cb(false, _('mgd_nui_error_processing'))  
+                                    end
+                                end)
+                            else
+                                print("^1[ERROR] Can't update shopTokens for " .. xPlayer.identifier .. " in sendCredits")
+                                cb(false, _('mgd_nui_error_processing'))
+                            end
+                        end)
+                    else
+                        cb(false, _('mgd_nui_error_purse'))
+                    end
+                else
+                    cb(false, _('mgd_nui_error_playerData'))
+                end
+            end)
+        else
+            cb(false, _('mgd_nui_error_serverID'))
+        end
+    end
+
+    if sendType == 'shopID' then
+        MySQL.query('SELECT `identifier`, `shopID` FROM `users` WHERE `shopID` = ?', {
+            receiver
+        }, function(result)
+            if result[1] then
+                local xPlayerTarget = ESX.GetPlayerFromIdentifier(result[1].identifier)
+                MySQL.query('SELECT `shopTokens` FROM `users` WHERE `identifier` = ?', {
+                    xPlayer.identifier
+                }, function(result2)
+                    if result2[1] then
+                        if result2[1].shopTokens >= quantity then
+                            MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` - ? WHERE `identifier` = ?', {
+                                quantity,
+                                xPlayer.identifier
+                            }, function(rowsChange)
+                                if rowsChange then
+                                    MySQL.update('UPDATE `users` SET `shopTokens` = `shopTokens` + ? WHERE `shopID` = ?', {
+                                        quantity,
+                                        receiver
+                                    }, function(rowsChange2)
+                                        if rowsChange2 then
+                                            if xPlayerTarget then
+                                                TriggerClientEvent("mgd_shop:shopNotification", xPlayerTarget.source, _('mgd_shop_credits_title'), _('mgd_shop_credits_content', ESX.Math.Round(quantity), senderShopID))
+                                            end
+                                            InsertTransactionsLog(xPlayer.identifier, senderShopID, result[1].identifier, receiver, quantity)
+                                            cb(true, "")
+                                        else
+                                            print("^1[ERROR] Can't update shopTokens for " .. receiver .. " in sendCredits")
+                                            cb(false, _('mgd_nui_error_processing'))  
+                                        end
+                                    end)
+                                else
+                                    print("^1[ERROR] Can't update shopTokens for " .. xPlayer.identifier .. " in sendCredits")
+                                    cb(false, _('mgd_nui_error_processing'))
+                                end
+                            end)
+                        else
+                            cb(false, _('mgd_nui_error_purse'))
+                        end
+                    else
+                        cb(false, _('mgd_nui_error_playerData'))
+                    end
+                end)
+            else
+                cb(false, _('mgd_nui_error_shopID'))
+            end
+        end)
+    end
+end)
+
+ESX.RegisterServerCallback('mgd_shop:isIDTaken', function(source, cb, ID)
+    MySQL.query('SELECT `shopID` FROM `users` WHERE `shopID` = ?', {
+        ID
 	}, function(result)
         if result[1] then
 		    cb(true)
@@ -448,9 +489,9 @@ end)
 ESX.RegisterServerCallback('mgd_shop:firstOpen', function(source, cb, newID)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.execute('UPDATE `users` SET `shopID` = @shopID WHERE `identifier` = @identifier', {
-        ['@identifier'] = xPlayer.identifier,
-        ['@shopID'] = newID
+    MySQL.update('UPDATE `users` SET `shopID` = ? WHERE `identifier` = ?', {
+        newID,
+        xPlayer.identifier
     }, function(rowsChange)
         if rowsChange then
             cb(true)
@@ -464,257 +505,107 @@ end)
 ESX.RegisterServerCallback('mgd_shop:getShopData', function(source, cb)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `group`, `shopID`, `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
+    MySQL.query('SELECT `group`, `shopID`, `shopTokens`, `shopRank` FROM `users` WHERE identifier = ?', {
+        xPlayer.identifier
 	}, function(result)
         if result[1] then
-            MySQL.Async.fetchAll('SELECT * FROM `mgdshop_history` WHERE `identifier` = @identifier ORDER BY `time` DESC LIMIT 20', {
-                ['@identifier'] = xPlayer.identifier
-            }, function(result2)
-                if result2[1] then
-                    cb(result[1], result2)
-                else
-                    cb(result[1], nil)
-                end
-            end)
+            cb(result[1])
         else
             print("^1[ERROR] No result in getShopData for " .. xPlayer.identifier)
         end
 	end)
 end)
 
-ESX.RegisterServerCallback('mgd_shop:buyRank', function(source, cb, creatorCode, purchaseRank, price)
+ESX.RegisterServerCallback('mgd_shop:buyItem', function(source, cb, categorie, item, creatorCode, lootboxsInfos)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
-	}, function(result)
-        if result[1] then
-            local sqlData = result[1]
-            if sqlData.shopRank ~= purchaseRank then
-                if ServerItemsInfos.Ranks[purchaseRank] ~= nil then
-                    if ServerItemsInfos.Ranks[purchaseRank] == price then
-                        if sqlData.shopTokens >= price then
-                            MySQL.Async.execute('UPDATE `users` SET `shopRank` = @shopRank, `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                                ['@identifier'] = xPlayer.identifier,
-                                ['@shopRank'] = purchaseRank,
-                                ['@shopTokens'] = sqlData.shopTokens - price
-                            }, function(rowsChange)
-                                if rowsChange then
-                                    HistoryAdd(xPlayer.identifier, {masterType = "buy", type = "rank", name = "Rang - " .. purchaseRank, price = price, creatorCode = creatorCode})
-                                    if creatorCode ~= "-" then
-                                        CreatorCodeUse(creatorCode, price)
+    if ServerItemsInfos[categorie][item] ~= nil then
+        MySQL.query('SELECT `shopTokens`, `shopID` FROM `users` WHERE identifier = ?', {
+            xPlayer.identifier
+        }, function(result)
+            if result[1] then
+                local shopTokens = result[1].shopTokens
+                if shopTokens >= ServerItemsInfos[categorie][item].price then
+                    MySQL.update('UPDATE `users` SET `shopTokens` = ? WHERE `identifier` = ?', {
+                        shopTokens - ServerItemsInfos[categorie][item].price,
+                        xPlayer.identifier
+                    }, function(rowsChange)
+                        if rowsChange then
+                            if categorie == "lootboxs" then
+                                InsertItemsLog(xPlayer.identifier, result[1].shopID, creatorCode, categorie, item, ServerItemsInfos[categorie][item].price, lootboxsInfos)
+                            else
+                                InsertItemsLog(xPlayer.identifier, result[1].shopID, creatorCode, categorie, item, ServerItemsInfos[categorie][item].price, "")
+                            end
+
+                            if creatorCode ~= "-" then CreatorCodeUse(creatorCode, ServerItemsInfos[categorie][item].price) end
+                            if categorie == "rangs" then
+                                MySQL.update('UPDATE `users` SET `shopRank` = ? WHERE `identifier` = ?', {
+                                    item,
+                                    xPlayer.identifier
+                                }, function(rowsChange)
+                                    if rowsChange then
+                                        cb(true, "")
+                                    else
+                                        cb(false, "Error : BI#4-".. item)
+                                        print("^1[ERROR] MySQL failed to UPDATE " .. xPlayer.identifier .. " rank to " .. item)
                                     end
-                                    cb(true, "S")
-                                else
-                                    cb(false, "E#5")
-                                    print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated when buying " .. purchaseRank)
-                                end
-                            end)
+                                end)
+                            end
+                            if categorie == "vehicules" then
+                                TriggerClientEvent("mgd_shop:giveVehicle", xPlayer.source, item)
+                                cb(true, "")
+                            end
+                            if categorie == "armes" then
+                                xPlayer.addWeapon(item, ServerItemsInfos[categorie][item].ammo)
+                                cb(true, "")
+                            end
+                            if categorie == "argent" then
+                                xPlayer.addAccountMoney('bank', tonumber(ServerItemsInfos[categorie][item].amount))
+                                TriggerClientEvent("esx:showAdvancedNotification", xPlayer.source, _('mgd_bank_title'), _('mgd_bank_object'), _('mgd_bank_content', ServerItemsInfos[categorie][item].amount), "CHAR_BANK_MAZE", 9)
+                                cb(true, "")
+                            end
+                            if categorie == "lootboxs" then
+                                cb(true, "")
+                            end
                         else
-                            cb(false, "E#4")
-                            print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseRank .. " with " .. sqlData.shopTokens .. " except that it cost " .. ServerItemsInfos.Ranks[purchaseRank])
+                            cb(false, "Error : BI#3-".. categorie)
+                            print("^1[ERROR] MySQL failed to UPDATE " .. xPlayer.identifier .. " when buy " .. item .. " for " .. ServerItemsInfos[categorie][item].price)
                         end
-                    else
-                        cb(false, "E#3")
-                        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseRank .. " at the price of " .. price .. " except that it cost " .. ServerItemsInfos.Ranks[purchaseRank])
-                    end
+                    end)
                 else
-                    cb(false, "E#2")
-                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy unknown rank (" .. purchaseRank .. ")")
+                    cb(false, "Error : BI#2")
+                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. item .. " with " .. shopTokens .. " except that it cost " .. ServerItemsInfos[categorie][item].price)
                 end
             else
-                cb(false, "E#1")
+                print("^1[ERROR] No result shopTokens for " .. xPlayer.identifier)
             end
-		else
-            print("^1[ERROR] No result in buyRank for " .. xPlayer.identifier)
-        end
-	end)
+        end)
+    else
+        cb(false, "Error : BI#1")
+        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. item .. " in " .. categorie .. " but doesn't exist.")
+    end
 end)
 
-ESX.RegisterServerCallback('mgd_shop:buyMoney', function(source, cb, creatorCode, purchaseName, purchaseAmount, price)
+ESX.RegisterServerCallback('mgd_shop:getPlayerHistory', function(source, cb)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
-	}, function(result)
-        if result[1] then
-            local sqlData = result[1]
-            if ServerItemsInfos.Money[purchaseName] ~= nil then
-                if ServerItemsInfos.Money[purchaseName].price == price then
-                    if ServerItemsInfos.Money[purchaseName].amount == purchaseAmount then
-                        if sqlData.shopTokens >= price then
-                            MySQL.Async.execute('UPDATE `users` SET `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                                ['@identifier'] = xPlayer.identifier,
-                                ['@shopTokens'] = sqlData.shopTokens - price
-                            }, function(rowsChange)
-                                if rowsChange then
-                                    xPlayer.addAccountMoney('bank', purchaseAmount)
-                                    HistoryAdd(xPlayer.identifier, {masterType = "buy", type = "money", name = "Argent - " .. purchaseAmount .. "$", price = price, creatorCode = creatorCode})
-                                    if creatorCode ~= "-" then
-                                        CreatorCodeUse(creatorCode, price)
-                                    end
-                                    cb(true, "S")
-                                else
-                                    cb(false, "E#5")
-                                    print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated when buying " .. purchaseName)
-                                end
-                            end)
-                        else
-                            cb(false, "E#4")
-                            print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseRank .. " with " .. sqlData.shopTokens .. " except that it cost " .. ServerItemsInfos.Ranks[purchaseRank])
-                        end
-                    else
-                        cb(false, "E#3")
-                        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseName .. " with " .. purchaseAmount .. "$ except that it contains ".. ServerItemsInfos.Money[purchaseName].amount .."$.")
-                    end
-                else
-                    cb(false, "E#2")
-                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseName .. " at the price of " .. price .. " except that it cost " .. ServerItemsInfos.Money[purchaseName].price)
-                end
-            else
-                cb(false, "E#1")
-                print("^1[ERROR] " .. xPlayer.identifier .. " try to buy unknown money pack (" .. purchaseName .. ")")
-            end
-		else
-            print("^1[ERROR] No result in buyMoney for " .. xPlayer.identifier)
+    local history = { items = {}, transactions = {} }
+    MySQL.query('SELECT * FROM `mgdshop_history_items` WHERE `pIdentifier` = ? ORDER BY `hDate` DESC, `hHour` DESC', {
+        xPlayer.identifier
+	}, function(resultItems)
+        if resultItems[1] then
+            history.items = resultItems
         end
-	end)
-end)
 
-ESX.RegisterServerCallback('mgd_shop:buyWeapon', function(source, cb, creatorCode, purchaseWeapon, price)
-    local _src = source
-    local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
-	}, function(result)
-        if result[1] then
-            local sqlData = result[1]
-            if ServerItemsInfos.Weapons[purchaseWeapon] ~= nil then
-                if ServerItemsInfos.Weapons[purchaseWeapon] == price then
-                    if sqlData.shopTokens >= price then
-                        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                            ['@identifier'] = xPlayer.identifier,
-                            ['@shopTokens'] = sqlData.shopTokens - price
-                        }, function(rowsChange)
-                            if rowsChange then
-                                xPlayer.addWeapon(purchaseWeapon, Config.ammoWeapon)
-                                HistoryAdd(xPlayer.identifier, {masterType = "buy", type = "weapon", name = "Arme - " .. purchaseWeapon, price = price, creatorCode = creatorCode})
-                                if creatorCode ~= "-" then
-                                    CreatorCodeUse(creatorCode, price)
-                                end
-                                cb(true, "S")
-                            else
-                                cb(false, "E#4")
-                                print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated when buying " .. purchaseWeapon)
-                            end
-                        end)
-                    else
-                        cb(false, "E#3")
-                        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseWeapon .. " with " .. sqlData.shopTokens .. " except that it cost " .. ServerItemsInfos.Weapons[purchaseWeapon])
-                    end
-                else
-                    cb(false, "E#2")
-                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseWeapon .. " at the price of " .. price .. " except that it cost " .. ServerItemsInfos.Weapons[purchaseWeapon])
-                end
-            else
-                cb(false, "E#1")
-                print("^1[ERROR] " .. xPlayer.identifier .. " try to buy unknown weapon (" .. purchaseWeapon .. ")")
+        MySQL.query('SELECT * FROM `mgdshop_history_transactions` WHERE `sIdentifier` = ? OR `rIdentifier` = ? ORDER BY `hDate` DESC, `hHour` DESC', {
+            xPlayer.identifier,
+            xPlayer.identifier
+        }, function(resultTransactions)
+            if resultTransactions[1] then
+                history.transactions = resultTransactions
             end
-		else
-            print("^1[ERROR] No result in buyWeapon for " .. xPlayer.identifier)
-        end
-	end)
-end)
 
-ESX.RegisterServerCallback('mgd_shop:buyVehicle', function(source, cb, creatorCode, purchaseModel, price)
-    local _src = source
-    local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
-	}, function(result)
-        if result[1] then
-            local sqlData = result[1]
-            if ServerItemsInfos.Vehicles[purchaseModel] ~= nil then
-                if ServerItemsInfos.Vehicles[purchaseModel] == price then
-                    if sqlData.shopTokens >= price then
-                        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                            ['@identifier'] = xPlayer.identifier,
-                            ['@shopTokens'] = sqlData.shopTokens - price
-                        }, function(rowsChange)
-                            if rowsChange then
-                                HistoryAdd(xPlayer.identifier, {masterType = "buy", type = "vehicle", name = "Véhicule - " .. purchaseModel, price = price, creatorCode = creatorCode})
-                                if creatorCode ~= "-" then
-                                    CreatorCodeUse(creatorCode, price)
-                                end
-                                cb(true, "S")
-                            else
-                                cb(false, "E#4")
-                                print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated when buying " .. purchaseModel)
-                            end
-                        end)
-                    else
-                        cb(false, "E#3")
-                        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseModel .. " with " .. sqlData.shopTokens .. " except that it cost " .. ServerItemsInfos.Vehicles[purchaseModel])
-                    end
-                else
-                    cb(false, "E#2")
-                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseModel .. " at the price of " .. price .. " except that it cost " .. ServerItemsInfos.Vehicles[purchaseModel])
-                end
-            else
-                cb(false, "E#1")
-                print("^1[ERROR] " .. xPlayer.identifier .. " try to buy unknown vehicle (" .. purchaseModel .. ")")
-            end
-		else
-            print("^1[ERROR] No result in buyVehicle for " .. xPlayer.identifier)
-        end
-	end)
-end)
-
-ESX.RegisterServerCallback('mgd_shop:buyLootbox', function(source, cb, creatorCode, purchaseCase, price)
-    local _src = source
-    local xPlayer = ESX.GetPlayerFromId(_src)
-    MySQL.Async.fetchAll('SELECT `shopTokens`, `shopRank` FROM `users` WHERE identifier = @identifier', {
-        ['@identifier'] = xPlayer.identifier
-	}, function(result)
-        if result[1] then
-            local sqlData = result[1]
-            if ServerItemsInfos.Lootboxs[purchaseCase] ~= nil then
-                if ServerItemsInfos.Lootboxs[purchaseCase].price == price then
-                    if sqlData.shopTokens >= price then
-                        MySQL.Async.execute('UPDATE `users` SET `shopTokens` = @shopTokens WHERE `identifier` = @identifier', {
-                            ['@identifier'] = xPlayer.identifier,
-                            ['@shopTokens'] = sqlData.shopTokens - price
-                        }, function(rowsChange)
-                            if rowsChange then
-                                local purchasedCase = ServerItemsInfos.Lootboxs[purchaseCase]
-                                local rewardIndex = math.random(#purchasedCase.loots)
-                                local reward = purchasedCase.loots[rewardIndex]
-                                ManageReward(xPlayer, reward)
-                                HistoryAdd(xPlayer.identifier, {masterType = "buy", type = "lootbox", name = "Caisse - " .. purchaseCase .. " | Récompense : " .. reward.label, price = price, creatorCode = creatorCode})
-                                if creatorCode ~= "-" then
-                                    CreatorCodeUse(creatorCode, price)
-                                end
-                                cb(true, "S", reward.label)
-                            else
-                                cb(false, "E#4")
-                                print("^1[ERROR] " .. xPlayer.identifier .. " didn't updated when buying " .. purchaseCase)
-                            end
-                        end)
-                    else
-                        cb(false, "E#3")
-                        print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseCase .. " with " .. sqlData.shopTokens .. " except that it cost " .. ServerItemsInfos.Lootboxs[purchaseCase].price)
-                    end
-                else
-                    cb(false, "E#2")
-                    print("^1[ERROR] " .. xPlayer.identifier .. " try to buy " .. purchaseCase .. " at the price of " .. price .. " except that it cost " .. ServerItemsInfos.Lootboxs[purchaseCase].price)
-                end
-            else
-                cb(false, "E#1")
-                print("^1[ERROR] " .. xPlayer.identifier .. " try to buy unknown weapon (" .. purchaseWeapon .. ")")
-            end
-		else
-            print("^1[ERROR] No result in buyLootbox for " .. xPlayer.identifier)
-        end
-	end)
+            cb(history)
+        end)
+    end)
 end)

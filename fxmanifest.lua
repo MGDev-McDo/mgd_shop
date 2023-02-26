@@ -1,24 +1,15 @@
 author 'McDo - MGDev'
-version '1.0.0'
-description 'InGame Shop with tokens'
+version '2.0'
+description 'InGame Shop'
 
 fx_version 'adamant'
 game 'gta5'
 
 client_scripts {    
-    'src/RMenu.lua',
-    'src/menu/RageUI.lua',
-    'src/menu/Menu.lua',
-    'src/menu/MenuController.lua',
-    'src/components/*.lua',
-    'src/menu/elements/*.lua',
-    'src/menu/items/*.lua',
-    'src/menu/panels/*.lua',
-    'src/menu/windows/*.lua',
     'config.lua',
     
     'client/main.lua',
-    'client/menu.lua',
+    'client/menu.lua'
 }
 
 server_scripts {
@@ -26,4 +17,15 @@ server_scripts {
     'config.lua',
 
     'server/main.lua',
+    'server/commands.lua'
+}
+
+ui_page 'client/ui/index.html'
+
+files {
+    'client/ui/index.html',
+    'client/ui/css/style.css',
+    'client/ui/script.js',
+    'client/ui/config.json',
+    'client/ui/img/*.png'
 }

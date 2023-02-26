@@ -1,0 +1,174 @@
+{
+    "version": "2.0",
+    "title": "Boutique",
+    "serverName": "MGDev.",
+    "adminGroup": "superadmin",
+
+    "shopItems": {
+        "rangs": {
+            "iron": {
+                "power": 1,
+                "label": "Fer",
+                "description": "Le rang Fer te permet d'accéder à :<br>- Feature 1",
+                "price": 1000
+            },
+            "gold": {
+                "power": 2,
+                "label": "Or",
+                "description": "Le rang Or te permet d'accéder à :<br>- Feature 1<br>- Feature 2",
+                "price": 1500
+            },
+            "diamond": {
+                "power": 3,
+                "label": "Diamant",
+                "description": "Le rang Diamant te permet d'accéder à :<br>- Feature 1<br>- Feature 2<br>- Feature 3",
+                "price": 2000
+            },
+            "master": {
+                "power": 4,
+                "label": "Master",
+                "description": "Le rang Master te permet d'accéder à :<br>- Feature 1<br>- Feature 2<br>- Feature 3<br>- Feature 4<br>- Feature 5",
+                "price": 3000,
+                "isNew": true
+            }
+        },
+
+        "vehicules": {
+            "xa21": {
+                "label": "XA-21",
+                "description": "WOW that's car man !",
+                "price": 5000,
+                "image": true,
+                "isNew": true
+            },
+            "toros": {
+                "label": "Toros",
+                "description": "Sûrement le meilleur SUV",
+                "price": 3000,
+                "image": true
+            },
+            "rrocket": {
+                "label": "Rampant Rocket",
+                "description": "Vroum vroum",
+                "price": 10000,
+                "image": true,
+                "isNew": true
+            },
+            "openwheel2": {
+                "label": "DR1",
+                "description": "Idéal pour un GP Explorer",
+                "price": 7500,
+                "image": true
+            }
+        },
+
+        "armes": {
+            "weapon_hatchet": {
+                "label": "Hatchet",
+                "description": "Un bon bûcheron a toujours besoin d'une hache",
+                "ammo": 1,
+                "price": 50,
+                "isNew": true
+            },
+            "weapon_pistol_mk2": {
+                "label": "Pistol Mk II",
+                "description": "Piou piou",
+                "ammo": 10,
+                "price": 200,
+                "image": true
+            },
+            "weapon_combatshotgun": {
+                "label": "Combat Shotgun",
+                "description": "Pouf pouf",
+                "ammo": 20,
+                "price": 2500
+            },
+            "weapon_assaultrifle_mk2": {
+                "label": "Assault Rifle Mk II",
+                "description": "PAN PAN PAN PAN PAN PAN",
+                "ammo": 100,
+                "price": 5000
+            }
+        },
+
+        "argent": {
+            "pack_1000": {
+                "label": "1 000$",
+                "description": "Une petite prime.",
+                "price": 300,
+                "amount": 1000
+            },
+            "pack_10000": {
+                "label": "10 000$",
+                "description": "Une bonne prime.",
+                "price": 3000,
+                "amount": 10000
+            },
+            "pack_100000": {
+                "label": "100 000$",
+                "description": "Money money money",
+                "price": 30000,
+                "amount": 100000
+            }
+        },
+
+        "lootboxs": {
+            "box_1": {
+                "label": "Box Bronze",
+                "description": "Lots disponibles :<br>",
+                "price": 1000,
+                "reward": [
+                    {"type": "money", "rewardLabel": "10 000$", "reward": "10000", "luck": 50},
+                    {"type": "rank", "rewardLabel": "Rang Fer", "reward": "iron", "luck": 20},
+                    {"type": "weapon", "rewardLabel": "Flare Gun", "reward": "weapon_flaregun", "luck": 10},
+                    {"type": "vehicle", "rewardLabel": "BMX", "reward": "bmx", "luck": 10},
+                    {"type": "coins", "rewardLabel": "5 000 coins", "reward": "5000", "luck": 10}
+                ]
+            },
+            "box_2": {
+                "label": "Box Argent",
+                "description": "Lots disponibles :<br>",
+                "price": 2000,
+                "reward": [
+                    {"type": "rank", "rewardLabel": "Rang Fer", "reward": "iron", "luck": 100}
+                ]
+            },
+            "box_3": {
+                "label": "Box Or",
+                "description": "Lots disponibles :<br>",
+                "price": 3000,
+                "reward": [
+                    {"type": "money", "rewardLabel": "10 000$", "reward": "10000", "luck": 10},
+                    {"type": "rank", "rewardLabel": "Rang Fer", "reward": "iron", "luck": 40},
+                    {"type": "weapon", "rewardLabel": "Flare Gun", "reward": "weapon_flaregun", "luck": 20},
+                    {"type": "vehicle", "rewardLabel": "BMX", "reward": "bmx", "luck": 20},
+                    {"type": "coins", "rewardLabel": "5 000 coins", "reward": "5000", "luck": 10}
+                ]
+            },
+            "box_4": {
+                "label": "Box Diamant",
+                "description": "Lots disponibles :<br>",
+                "price": 4000,
+                "reward": [
+                    {"type": "money", "rewardLabel": "10 000$", "reward": "10000", "luck": 50},
+                    {"type": "rank", "rewardLabel": "Rang Fer", "reward": "iron", "luck": 20},
+                    {"type": "weapon", "rewardLabel": "Flare Gun", "reward": "weapon_flaregun", "luck": 10},
+                    {"type": "vehicle", "rewardLabel": "BMX", "reward": "bmx", "luck": 10},
+                    {"type": "coins", "rewardLabel": "5 000 coins", "reward": "5000", "luck": 10}
+                ]
+            },
+            "box_5": {
+                "label": "Box Emeraude",
+                "description": "Lots disponibles :<br>",
+                "price": 5000,
+                "reward": [
+                    {"type": "money", "rewardLabel": "10 000$", "reward": "10000", "luck": 50},
+                    {"type": "rank", "rewardLabel": "Rang Fer", "reward": "iron", "luck": 20},
+                    {"type": "weapon", "rewardLabel": "Flare Gun", "reward": "weapon_flaregun", "luck": 10},
+                    {"type": "vehicle", "rewardLabel": "BMX", "reward": "bmx", "luck": 10},
+                    {"type": "coins", "rewardLabel": "5 000 coins", "reward": "5000", "luck": 10}
+                ]
+            }
+        }
+    }
+}
