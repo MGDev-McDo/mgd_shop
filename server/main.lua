@@ -18,6 +18,10 @@ AddEventHandler('onResourceStart', function(resourceName)
             end
         end
 
+        ServerItemsInfos["rangs"]["user"] = {
+            power = 0
+        }
+
         MySQL.query('SELECT * FROM `mgdshop_creatorcode`', {
         }, function(result)
             if result[1] then

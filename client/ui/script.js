@@ -3,7 +3,7 @@ window.onload = function(e) {
   window.addEventListener('message', (event) => {
     var data = event.data;
     if (data !== undefined) {
-      var userShopData = data.userShopData;
+      userShopData = data.userShopData;
       userShopData.serverID = data.serverID
 
       if (data.display === true) {
@@ -144,7 +144,8 @@ window.onload = function(e) {
       var itemData = document.getElementById('selectName').itemData;
       var categorie = document.getElementById('selectName').categorie;
       var item = document.getElementById('selectName').item;
-      if (userShopData.shopTokens >= itemData.price) {
+      var purse = document.getElementById("purseAmount").textContent;
+      if (purse >= itemData.price) {
         if(categorie == "rangs" && (GetRankPower(userShopData.shopRank) >= GetRankPower(item))) {
           return timedNotification(3, 'error', "Tu ne peux pas acheter un rang inférieur ou égal au tient.")
         }
@@ -395,7 +396,7 @@ window.onload = function(e) {
         document.getElementById(categorie).classList.add("navbar-item-selected");
         $('#categorieName').text(categorie.toUpperCase());
         if (categorie === "vehicules") {
-          timedNotification(3, "info", "ATTENTION, le véhicule spawn sur place.")
+          timedNotification(1.25, "info", "ATTENTION, le véhicule spawn sur place.")
         }
         buildCategorieList(categorie);
         clickableCategorieItem(categorie);

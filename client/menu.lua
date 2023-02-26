@@ -1,6 +1,6 @@
 RegisterNetEvent('mgd_shop:openShopUI')
 AddEventHandler('mgd_shop:openShopUI', function()
-    ESX.TriggerServerCallback('mgd_shop:getShopData', function(playerShopData, historyData)
+    ESX.TriggerServerCallback('mgd_shop:getShopData', function(playerShopData)
         ESX.TriggerServerCallback('mgd_shop:getCreatorcode', function(dataCreatorCode)
             if playerShopData ~= nil then
                 local firstOpen = false
