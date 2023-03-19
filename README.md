@@ -1,12 +1,13 @@
 # mgd_shop
 🛒 InGame Shop for FiveM Server
 
-## V2.0
+## V2.1
 
-- Add NUI for lootboxs
-- RageUI to NUI Interface
-- Add percentage in lootboxs
-- Rework all
+- Add configuration "moneyName" for shop money name
+- Add messages in configuration to edit text easily
+- Add manage features (Send coins / Activable creators codes)
+- Fix double click on buy button
+- Fix error during purchase if you disable creator code
 
 ## VIDEO PREVIEW
 [VIDEO PREVIEW](https://streamable.com/dcz9il)
