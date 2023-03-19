@@ -3,16 +3,17 @@
     <title>MGDev. • IG Shop</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
-    <script type="text/javascript" src="./script.js"></script>
+    <script src="./script.js"></script>
+    <script src="./functions.js"></script>
     <script src="https://kit.fontawesome.com/707cdfbd98.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <div id="shop-main">
-      <div class="center-notif" id="processing"><div class="notif-icon"><i class="fa-solid fa-circle-notch fa-spin"></i></div><div class="notif-text">VERIFICATION EN COURS</div></div>
-      <div class="center-notif" id="success-notif"><div id="success-icon" class="notif-icon"><i class="fa-regular fa-circle-check"></i></div><div id="success-text" class="notif-text">SUCCES<div class="line notif-line"></div><div class="subtext" id="success-subtext"><i class="fa-solid fa-coins"></i> - 10</div></div></div>
-      <div class="center-notif" id="error-notif"><div id="error-icon" class="notif-icon"><i class="fa-regular fa-circle-xmark"></i></div><div id="error-text" class="notif-text">ERREUR<div class="line notif-line"></div><div class="subtext" id="error-subtext"><i class="fa-solid fa-coins"></i> 10 manquant(s)</div></div></div>
-      <div class="center-notif" id="info-notif"><div id="info-icon" class="notif-icon"><i class="fa-solid fa-circle-info"></i></div><div id="info-text" class="notif-text">INFO<div class="line notif-line"></div><div class="subtext" id="info-subtext"><i class="fa-solid fa-coins"></i> 10 manquant(s)</div></div></div>
-      <div class="center-notif" id="welcome-notif"><div id="welcome-icon" class="notif-icon"><i class="fa-solid fa-hands-clapping fa-shake"></i></div><div id="welcome-text" class="notif-text">BIENVENUE<div class="line notif-line"></div><div class="subtext" id="welcome-subtext">C'est la première fois qu'on te voit ici !<br>Voici ton identifiant : <span id="welcomeLogin">MGD-0000</span></div></div></div>
+      <div class="center-notif" id="processing"></div>
+      <div class="center-notif" id="success-notif"></div>
+      <div class="center-notif" id="error-notif"></div>
+      <div class="center-notif" id="info-notif"></div>
+      <div class="center-notif" id="welcome-notif"></div>
 
       <div class="input-main" id="input-text">
         <div class="dialog-wrap"><input type="text" placeholder="default" name="default" id="inputText"/>
@@ -23,39 +24,14 @@
         </div>
       </div>
 
-      <div id="coinsForm">
-        <div id="closeCoinsForm"><i class="fa-solid fa-circle-arrow-left"></i></div>
-        <div class="coinsFormTitle">FORMULAIRE D'ENVOI</div>
-        <div class="coinsFormItem"><span><i class="fa-solid fa-circle-user"></i> DESTINATAIRE <i id="moreInfoReceiver" class="fa-regular fa-circle-question"></i></span><span class="exampleDisplay displayFormCoins" id="idToSendCoins">MGD-OOOO</span></div>
-        <div id="moreInfoReceiverExplain"><i class="fa-regular fa-circle-question fa-flip" style="--fa-animation-duration: 2s;"></i><span>Le destinataire est soit l'identifiant boutique soit l'ID serveur du joueur.</span></div>
-        <div class="coinsFormItem"><span><i class="fa-solid fa-circle-dollar-to-slot"></i> MONTANT</span><span class="displayFormCoins amountCoins" id="amountToSendCoins"><i class="fa-solid fa-coins"></i><span class="exampleDisplay" id="displayAmountToSendCoins">0</span></span></div>
-        <div id="submitCoinsForm"><i class="fa-solid fa-share-from-square"></i> ENVOYER</div>
-      </div>
+      <div id="coinsForm"></div>
 
-      <div id="createCCodeForm">
-        <div id="closeCCCodeForm"><i class="fa-solid fa-circle-arrow-left"></i></div>
-        <div class="cCCodeFormTitle">CREATION CODE CREATEUR</div>
-        <div class="cCCodeFormItem"><span><i class="fa-solid fa-tag"></i> CODE</span><span class="exampleDisplay displayFormAdmin" id="cCCodeCode">MGDEV</span></div>
-        <div class="cCCodeFormItem"><span><i class="fa-solid fa-circle-user"></i> IDENTIFIER</span><span class="exampleDisplay displayFormAdmin" id="cCCodeIdentifier">steam:000000000000000</span></div>
-        <div id="submitCCCodeForm"><i class="fa-solid fa-circle-plus"></i> CREER</div>
-      </div>
+      <div id="createCCodeForm"></div>
 
-      <div id="filterLogsForm">
-        <div id="closeFilterLogsForm"><i class="fa-solid fa-circle-arrow-left"></i></div>
-        <div class="filterLogsFormTitle">FILTRE LOGS</div>
-        <div class="filterLogsFormItem"><span><i class="fa-solid fa-bars"></i> FILTRE</span>
-          <select class="displayFormAdmin displayFormAdminSelect" id="filterLogsCategorie"></select>
-        </div>
-        <div class="filterLogsFormItem"><span><i class="fa-solid fa-magnifying-glass"></i> VALEUR</span><span class="displayFormAdmin" id="filterLogsValue"></span></div>
-        <div id="submitFilterLogsForm"><i class="fa-solid fa-filter"></i> FILTRER</div>
-      </div>
+      <div id="filterLogsForm"></div>
 
       <div id="lootbox">
-        <div id="lootboxReward">
-          <div id="lbr-title"><i class="fa-solid fa-gift"></i>FELICITATIONS</div>
-          <div class="line notif-line lbr-line"></div>
-          <div id="lbr-content">TU AS GAGNE <span id="lbr-reward">%s</span> !</div>
-        </div>
+        <div id="lootboxReward"></div>
         <div id="lootboxModel">
           <div class="lb-face lb-front"></div>
           <div class="lb-face lb-back"></div>
@@ -67,102 +43,21 @@
       </div>
 
       <div class="title" id="title"></div>
-      <div class="purse"><i class="fa-solid fa-coins"></i> <span id="purseAmount">0</span> coins</div>
+      <div id="purse" class="purse"></div>
       <div id="closeShop"><i class="fa-solid fa-circle-xmark"></i></div>
-      <div class="shop-sub">
-        <span id="hour">0h00</span><span>Code créateur : <span id="creatorCode">-</span></span>
-      </div>
+      <div id="shop-sub" class="shop-sub"></div>
       <div class="line"></div>
       <div id="navbar"></div>
       <div id="navbarAdmin"></div>
       <div class="line"></div>
-      <div class="main-content" id="browse">
-        <div class="main-head firstHead">SELECTION</div>
-        <div class="main-head secondHead" id="categorieName">RANGS</div>
-        <div class="selectionArea">
-          <div id="selectContainer">
-            <div class="selectHead"><span id="selectName"></span><span id="buyButton"><i class="fa-solid fa-cart-shopping"></i>Acheter</span></div>
-            <div id="selectDescription">
-            </div>
-          </div>
-        </div>
-        <div class="listMain" id="categorieList">
-        </div>
-      </div>
-
-      <div class="main-content" id="homeMain">
-        <div class="main-head firstHead">ACCUEIL</div>
-        <div class="main-head secondHead">NOUVEAUTÉS</div>
-        <div class="homeArea" id="homeArea">
-        </div>
-        <div class="listMain" id="newsList">
-        </div>
-      </div>
-
-      <div class="main-content" id="pHistory">
-        <div class="main-head firstHead">HISTORIQUE ACHATS</div>
-        <div class="main-head secondHead">HISTORIQUE TRANSACTIONS</div>
-        <div class="listMain" id="historyItems">
-        </div>
-        <div class="listMain" id="historyTransactions">
-        </div>
-      </div>
-
-      <div class="main-content" id="adminCreatorsCodes">
-        <div class="main-head firstHead">SELECTION</div>
-        <div class="main-head secondHead">LISTE DES CODES CREATEURS<span id="newCreatorCode"><i class="fa-solid fa-circle-plus fa-beat-fade" style="--fa-beat-fade-scale: 1.075;"></i></span></div>
-        <div class="selectionArea">
-          <div id="adminSelectContainer">
-            <div class="selectHead"><span id="adminSelectName"></span><span id="deleteButton"><i class="fa-solid fa-trash "></i>Supprimer</span></div>
-            <div id="adminSelectDescription">
-              <div class="adminDisplayDescription"><span class="aDDspan">Code : </span><span id="acCode"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Identifier : </span><span id="acIdentifier"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Gain estimé : </span><span class="itemPrice"><i class="fa-solid fa-coins"></i> <span id="acMoney">N/A</span></span></div>
-            </div>
-          </div>
-        </div>
-        <div class="listMain" id="creatorCodeList">
-        </div>
-      </div>
-      <div class="main-content" id="adminLogsItems">
-        <div class="main-head firstHead">SELECTION</div>
-        <div class="main-head secondHead">LISTE DES LOGS<span id="filterItemsLogs"><i class="fa-solid fa-filter"></i>FILTRER</span></div>
-        <div class="selectionArea">
-          <div id="adminSelectLogItemContainer">
-            <div class="selectHead"><span id="adminSelectLogItemName"></span></div>
-            <div id="adminSelectLogItemDescription">
-              <div class="adminDisplayDescription"><span class="aDDspan">Date : </span><span id="aSLIDate"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Joueur : </span><span id="aSLIPlayer"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Code créateur utilisé : </span><span id="aSLICreatorCode"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Catégorie : </span><span id="aSLICategorie"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Item : </span><span id="aSLIItem"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Prix : </span><span class="itemPrice"><i class="fa-solid fa-coins"></i> <span id="aSLIPrice">N/A</span></span></div>
-              <div class="adminDisplayDescription" id="adminLogItemLootboxReward"><span class="aDDspan">Gain : </span><span id="aSLIReward"></span></div>
-            </div>
-          </div>
-        </div>
-        <div class="listMain" id="logsItemsList">
-        </div>
-      </div>
-      <div class="main-content" id="adminLogsTransactions">
-        <div class="main-head firstHead">SELECTION</div>
-        <div class="main-head secondHead">LISTE DES LOGS<span id="filterTransactionsLogs"><i class="fa-solid fa-filter"></i>FILTRER</span></div>
-        <div class="selectionArea">
-          <div id="adminSelectLogTransactionContainer">
-            <div class="selectHead"><span id="adminSelectLogTransactionName"></span></div>
-            <div id="adminSelectLogTransactionDescription">
-              <div class="adminDisplayDescription"><span class="aDDspan">Date : </span><span id="aSLTDate"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Envoyeur : </span><span id="aSLTSender"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Destinataire : </span><span id="aSLTReceiver"></span></div>
-              <div class="adminDisplayDescription"><span class="aDDspan">Montant : </span><span class="itemPrice"><i class="fa-solid fa-coins"></i> <span id="aSLTAmount">N/A</span></span></div>
-            </div>
-          </div>
-        </div>
-        <div class="listMain" id="logsTransactionsList">
-        </div>
-      </div>
+      <div class="main-content" id="browse"></div>
+      <div class="main-content" id="homeMain"></div>
+      <div class="main-content" id="pHistory"></div>
+      <div class="main-content" id="adminCreatorsCodes"></div>
+      <div class="main-content" id="adminLogsItems"></div>
+      <div class="main-content" id="adminLogsTransactions"></div>
       <div class="line line-last"></div>
-      <div id="version">v2.0</div>
+      <div id="version"></div>
     </div>
   </body>
 </html>

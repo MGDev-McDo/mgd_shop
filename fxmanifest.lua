@@ -1,5 +1,5 @@
 author 'McDo - MGDev'
-version '2.0'
+version '2.1'
 description 'InGame Shop'
 
 fx_version 'adamant'
@@ -26,6 +26,7 @@ files {
     'client/ui/index.html',
     'client/ui/css/style.css',
     'client/ui/script.js',
+    'client/ui/functions.js',
     'client/ui/config.json',
     'client/ui/img/*.png'
 }

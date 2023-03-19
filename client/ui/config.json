@@ -1,8 +1,15 @@
 {
-    "version": "2.0",
+    "version": "2.1",
     "title": "Boutique",
     "serverName": "MGDev.",
     "adminGroup": "superadmin",
+    "moneyName": "coins",
+    "lang": "FR",
+
+    "features": {
+        "sendCoins": true,
+        "creatorCode": true
+    },
 
     "shopItems": {
         "rangs": {
@@ -169,6 +176,88 @@
                     {"type": "coins", "rewardLabel": "5 000 coins", "reward": "5000", "luck": 10}
                 ]
             }
+        }
+    },
+
+    "LANG": {
+        "FR": {
+            "home": "Accueil",
+            "news": "Nouveautés",
+            "homeInfo_shopID": "Identifiant Boutique",
+            "homeInfo_serverID": "ID Serveur",
+            "homeInfo_rank": "Rang",
+            "homeButton_sendCoins": "Envoyer des ",
+            "homeButton_history": "Historique",
+            "homeButton_admin": "Administration",
+            "adminNavbar_creatorCodes": "Codes createurs",
+            "adminNavbar_logsItems": "Logs Achats",
+            "adminNavbar_logsTransactions": "Logs Transactions",
+            "coinsForm_title": "Formulaire d'envoi",
+            "coinsForm_receiver": "Destinataire",
+            "coinsForm_explain": "Le destinataire est soit l'identifiant boutique soit l'ID serveur du joueur.",
+            "coinsForm_amount": "Montant",
+            "coinsForm_send": "Envoyer",
+            "cCCForm_title": "Creation code createur",
+            "cCCForm_code": "Code",
+            "cCCForm_identifier": "Identifier",
+            "cCCForm_create": "Creer",
+            "filterLogs_title": "Filtre logs",
+            "filterLogs_filter": "Filtre",
+            "filterLogs_value": "Valeur",
+            "filterLogs_submit": "Filtrer",
+            "lootboxR_title": "Felicitations",
+            "lootboxR_message": "Tu as gagne",
+            "selectTitle": "Selection",
+            "shopSub_creatorCode": "Code créateur",
+            "pHistory_items": "Historique Achats",
+            "pHistory_transactions": "Historique Transactions",
+            "aCC_title": "Liste des codes createurs",
+            "deleteButton": "Supprimer",
+            "aCC_reward": "Gain estimé",
+            "logs_title": "Liste des logs",
+            "filter": "Filtrer",
+            "filter_shopID": "Shop ID",
+            "filter_shopItem": "Shop Item",
+            "date": "Date",
+            "player": "Joueur",
+            "creatorCodeUsed": "Code créateur utilisé",
+            "categorie": "Catégorie",
+            "item": "Item",
+            "price": "Prix",
+            "rewardLootbox": "Gain",
+            "sender": "Envoyeur",
+            "receiver": "Destinataire",
+            "amount": "Montant",
+            "processing": "Verification en cours",
+            "success": "Succes",
+            "error": "Erreur",
+            "info": "Info",
+            "welcome_title": "Bienvenue",
+            "welcome_content": "C'est la première fois qu'on te voit ici !<br>Voici ton identifiant : ",
+            "alreadyHaveRank": "Tu avais déjà ce rang ou mieux. Tu as donc reçu la valeur de ce rang en ",
+
+            "error_coinsForm": "Ton nombre de coins ne te permet pas de faire cela.",
+            "error_amount": "Le montant est invalide.",
+            "error_receiver": "Le destinaire n'est pas valide.",
+            "error_u_receiver": "Tu ne peux pas être le destinataire.",
+            "error_bigRank": "Tu ne peux pas acheter un rang inférieur ou égal au tient.",
+            "error_notEnoughCoins": "Ton solde ne te permet pas d'acheter cela.",
+            "error_codeExist": "Ce code existe déjà.",
+            "error_server": "Erreur pendant l'update server.",
+            "error_codeNoExist": "Ce code créateur n'existe pas.",
+            "error_codeAlreadyExist": "Ce code créateur existe déjà.",
+            "error_noData": "Aucune valeur renseignée.",
+
+            "success_coinsForm": "L'envoie a bien été effectué.",
+            "success_buy": "L'achat a bien été effectué.",
+            "success_create_code": "Le code a été créé !",
+            "success_delete_code": "Le code a été supprimé !",
+            "success_code": "Tu utilises désormais le code créateur : ",
+            "success_edit_code": "Le code a été modifié !",
+            "success_edit_identifier": "L'identifier a été modifié !",
+
+            "info_categ_veh": "ATTENTION, le véhicule spawn sur place.",
+            "info_no_code": "Tu n'utilises plus de code créateur."
         }
     }
 }
