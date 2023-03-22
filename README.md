@@ -10,7 +10,7 @@
 - Fix error during purchase if you disable creator code
 
 ## VIDEO PREVIEW
-[VIDEO PREVIEW](https://streamable.com/dcz9il)
+[VIDEO PREVIEW](https://www.youtube.com/watch?v=DGNInZTme28)
 
 ## SCREENSHOTS PREVIEW
 ![Preview 1](https://i.imgur.com/Kj50Kis.png)
